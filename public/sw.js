@@ -3,7 +3,8 @@
 // - Arquivos do app (JS, CSS, fontes, ícones): usa a cópia guardada e atualiza por trás.
 // - /api/*: nunca guarda (a IA só funciona online).
 
-const VERSAO = 'cofu-v1';
+// A versão vem do build (?v= no registro); cada deploy ganha um cache novo e o velho é apagado.
+const VERSAO = `cofu-${new URL(self.location.href).searchParams.get('v') || 'dev'}`;
 const INICIAIS = ['/', '/icon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
@@ -25,14 +26,19 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
 
   if (req.mode === 'navigate') {
+    // Guarda pelo caminho, sem a parte "?texto=...": links da Siri e do compartilhar
+    // abrem offline usando a página guardada, e o cache não enche de cópias.
+    const chave = url.pathname;
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copia = res.clone();
-          caches.open(VERSAO).then((cache) => cache.put(req, copia));
+          if (res.ok) {
+            const copia = res.clone();
+            caches.open(VERSAO).then((cache) => cache.put(chave, copia));
+          }
           return res;
         })
-        .catch(() => caches.match(req).then((r) => r || caches.match('/'))),
+        .catch(() => caches.match(chave).then((r) => r || caches.match('/'))),
     );
     return;
   }

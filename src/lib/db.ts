@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Estado, Item, ItemSugerido } from './items.ts';
+import { planejarJuntar } from './juntar.ts';
 
 /**
  * Tudo fica no aparelho (IndexedDB), então a lista funciona sem internet.
@@ -31,19 +32,12 @@ function novoId() {
 
 /** Junta com o que já está na lista: mesmo nome soma quantidade em vez de duplicar. */
 export async function adicionarItens(sugeridos: ItemSugerido[]) {
-  const atuais = await db.itens.where('estado').notEqual('casa').toArray();
   const agora = Date.now();
   await db.transaction('rw', db.itens, async () => {
-    for (const [i, s] of sugeridos.entries()) {
-      const igual = atuais.find((a) => a.nome.toLowerCase() === s.nome.toLowerCase() && a.unidade === s.unidade);
-      if (igual && igual.estado === 'lista') {
-        await db.itens.update(igual.id, {
-          quantidade: igual.quantidade != null && s.quantidade != null ? igual.quantidade + s.quantidade : igual.quantidade ?? s.quantidade,
-          preco: igual.preco != null && s.preco != null ? igual.preco + s.preco : igual.preco ?? s.preco,
-        });
-        continue;
-      }
-      await db.itens.add({ ...s, id: novoId(), estado: 'lista', criadoEm: agora + i });
+    const atuais = await db.itens.where('estado').equals('lista').toArray();
+    for (const op of planejarJuntar(atuais, sugeridos)) {
+      if (op.tipo === 'somar') await db.itens.update(op.id, { quantidade: op.quantidade, preco: op.preco });
+      else await db.itens.add({ ...op.item, id: novoId(), estado: 'lista', criadoEm: agora + op.ordem });
     }
   });
 }
@@ -63,6 +57,17 @@ export function removerItem(id: string) {
 /** Nova feira: o que foi pro cofo sai (já comprou); o que tem em casa continua na prateleira. */
 export async function novaFeira() {
   await db.itens.where('estado').equals('cofo').delete();
+}
+
+export type Modo = 'lista' | 'figuras';
+
+export async function lerModo(): Promise<Modo> {
+  const linha = await db.config.get('modo');
+  return linha?.valor === 'figuras' ? 'figuras' : 'lista';
+}
+
+export function salvarModo(modo: Modo) {
+  return db.config.put({ chave: 'modo', valor: modo });
 }
 
 export async function lerOrcamento(): Promise<number | null> {

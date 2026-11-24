@@ -6,7 +6,17 @@ import { useEffect, useRef, useState } from 'react';
  * O cofo é a barra de progresso: enche conforme os itens entram.
  * Palha enquanto cabe no orçamento; terracota e transbordando quando passa.
  */
-export function Cofo({ progresso, estourou, pulso }: { progresso: number; estourou: boolean; pulso: number }) {
+export function Cofo({
+  progresso,
+  estourou,
+  pulso,
+  className = 'h-28 w-28',
+}: {
+  progresso: number;
+  estourou: boolean;
+  pulso: number;
+  className?: string;
+}) {
   const nivel = Math.max(0, Math.min(progresso, 1));
   // Corpo do cofo vai de y=232 (boca) a y=420 (fundo).
   const altura = 188 * nivel;
@@ -25,7 +35,7 @@ export function Cofo({ progresso, estourou, pulso }: { progresso: number; estour
   }, [pulso]);
 
   return (
-    <svg viewBox="80 110 352 330" className={`h-28 w-28 shrink-0 ${balanca ? 'balancar' : ''}`} aria-hidden="true">
+    <svg viewBox="80 110 352 330" className={`${className} shrink-0 ${balanca ? 'balancar' : ''}`} aria-hidden="true">
       <defs>
         <clipPath id="corpo-cofo">
           <path d="M104 224 H408 L372 404 Q368 424 348 424 H164 Q144 424 140 404 Z" />

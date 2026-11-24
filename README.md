@@ -51,6 +51,23 @@ flowchart LR
 - "Tem em casa" manda o item pra prateleira; "Nova feira" esvazia o cofo
 - Preços são estimativas, não preços reais de mercado
 
+## Abrir por link, Siri e compartilhar
+
+O Cofu entende pedidos no link de abertura, então funciona com assistentes e atalhos do celular:
+
+| Link | O que faz |
+| --- | --- |
+| `/?texto=2 kg de arroz e café` | Monta a lista direto (offline usa o leitor local) |
+| `/?falar=1` | Abre com o microfone ligado |
+| `/?modo=figuras` | Abre no modo figuras |
+
+- **Android:** com o Cofu instalado, ele aparece no menu **Compartilhar**. Uma mensagem do WhatsApp ("traz pão e leite") vira lista. Segurar o ícone mostra os atalhos "Falar a lista" e "Modo figuras".
+- **iPhone (Siri):** no app **Atalhos**, crie um atalho chamado **Cofu** com duas ações:
+  1. **Ditar texto** (idioma: Português do Brasil)
+  2. **Abrir URLs**: `https://<endereço do Cofu>/?texto=` seguido da variável **Texto ditado**
+
+  Aí é só dizer "E aí Siri, Cofu" e falar a lista. Pra abrir no modo figuras, acrescente `&modo=figuras` no link.
+
 ## Rodar
 
 Requer Node 22.5+.

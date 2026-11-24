@@ -42,25 +42,54 @@ async function montar(texto: string): Promise<{ itens: ItemSugerido[]; semIA: bo
   return { itens: lerLista(texto), semIA: true };
 }
 
-export function Entrada({ onItens }: { onItens: (itens: ItemSugerido[], semIA: boolean, aviso?: string) => void }) {
+type Props = {
+  onItens: (itens: ItemSugerido[], semIA: boolean, aviso?: string) => void;
+  /** Veio do link de abertura (Siri, compartilhar, atalho do ícone). */
+  pedido?: { texto: string | null; falar: boolean } | null;
+  /** Avisa que o pedido foi usado, pra não repetir se a entrada for montada de novo. */
+  onPedidoUsado?: () => void;
+};
+
+export function Entrada({ onItens, pedido, onPedidoUsado }: Props) {
   const [texto, setTexto] = useState('');
   const [ouvindo, setOuvindo] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [temVoz, setTemVoz] = useState(false);
+  const [dica, setDica] = useState<string | null>(null);
   const rec = useRef<Reconhecimento | null>(null);
   const base = useRef('');
+  const botaoVoz = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setTemVoz(Boolean(criarReconhecimento()));
   }, []);
 
-  function alternarVoz() {
+  useEffect(() => {
+    if (!pedido) return;
+    onPedidoUsado?.();
+    if (pedido.texto) {
+      setTexto(pedido.texto);
+      enviar(pedido.texto);
+    } else if (pedido.falar) {
+      // Alguns navegadores só ligam o microfone depois de um toque: aí fica a dica.
+      if (!alternarVoz()) {
+        botaoVoz.current?.focus();
+        setDica('Toque no microfone e fale o que vai comprar.');
+      }
+    }
+    // Roda uma vez por pedido.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedido]);
+
+  /** true se começou a ouvir. */
+  function alternarVoz(): boolean {
+    setDica(null);
     if (ouvindo) {
       rec.current?.stop();
-      return;
+      return false;
     }
     const r = criarReconhecimento();
-    if (!r) return;
+    if (!r) return false;
     r.lang = 'pt-BR';
     r.interimResults = true;
     r.continuous = true;
@@ -71,14 +100,26 @@ export function Entrada({ onItens }: { onItens: (itens: ItemSugerido[], semIA: b
       setTexto(base.current + falado.trim());
     };
     r.onend = () => setOuvindo(false);
-    r.onerror = () => setOuvindo(false);
+    r.onerror = (e) => {
+      setOuvindo(false);
+      if (e.error === 'not-allowed') setDica('Toque no microfone e fale o que vai comprar.');
+      // O reconhecimento de voz do navegador precisa de internet (no Chrome o áudio vai pro Google).
+      if (e.error === 'network') {
+        setDica('Sem internet o microfone do Cofu não funciona. Toque na caixa de texto e use o microfone do teclado.');
+      }
+    };
     rec.current = r;
-    r.start();
+    try {
+      r.start();
+    } catch {
+      return false;
+    }
     setOuvindo(true);
+    return true;
   }
 
-  async function enviar() {
-    const t = texto.trim();
+  async function enviar(valor = texto) {
+    const t = valor.trim();
     if (!t || carregando) return;
     rec.current?.stop();
     setCarregando(true);
@@ -108,6 +149,7 @@ export function Entrada({ onItens }: { onItens: (itens: ItemSugerido[], semIA: b
       <div className="mt-3 flex items-center gap-3">
         {temVoz && (
           <button
+            ref={botaoVoz}
             type="button"
             onClick={alternarVoz}
             aria-pressed={ouvindo}
@@ -123,7 +165,7 @@ export function Entrada({ onItens }: { onItens: (itens: ItemSugerido[], semIA: b
         )}
         <button
           type="button"
-          onClick={enviar}
+          onClick={() => enviar()}
           disabled={!texto.trim() || carregando}
           className="min-h-14 flex-1 rounded-2xl bg-babacu px-5 text-lg font-bold text-areia shadow-md transition disabled:opacity-40"
         >
@@ -131,6 +173,11 @@ export function Entrada({ onItens }: { onItens: (itens: ItemSugerido[], semIA: b
         </button>
       </div>
       {ouvindo && <p className="mt-2 text-base text-terracota">Ouvindo… fale os itens e toque de novo pra parar.</p>}
+      {dica && !ouvindo && (
+        <p role="status" className="mt-2 text-base text-folha">
+          {dica}
+        </p>
+      )}
     </section>
   );
 }

@@ -1,7 +1,19 @@
+import { networkInterfaces } from 'node:os';
 import type { NextConfig } from 'next';
 
+// Em dev, libera abrir pelo IP desta máquina na rede (testar no celular pelo Wi-Fi).
+const ipsDaRede = Object.values(networkInterfaces())
+  .flat()
+  .filter((i) => i && i.family === 'IPv4' && !i.internal)
+  .map((i) => i!.address);
+
 // Variáveis vêm do .env desta pasta (local) ou do painel da hospedagem.
+// Versão do build: troca o cache do service worker a cada deploy.
+const versao = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8) || Date.now().toString(36);
+
 const config: NextConfig = {
+  env: { NEXT_PUBLIC_VERSAO: versao },
+  allowedDevOrigins: ipsDaRede,
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
