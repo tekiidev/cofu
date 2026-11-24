@@ -1,0 +1,20 @@
+Cofu
+Copyright (C) 2026 Felipe Oliveira (Teki Industries)
+https://github.com/tekiidev/cofu
+
+Este programa é software livre, distribuído sob a GNU Affero General Public
+License, versão 3 (AGPL-3.0-only). Veja o arquivo LICENSE.
+
+Qualquer cópia, fork ou trabalho derivado deve manter este aviso, o crédito
+ao autor original e o código-fonte disponível nos termos da AGPL, inclusive
+quando oferecido como serviço pela rede.
+
+Licença comercial: para usar o Cofu em produto ou serviço sem cumprir os
+termos da AGPL (por exemplo, sem abrir o código), é preciso uma licença
+comercial do autor. Contato: https://github.com/tekiidev
+
+Nomes e marcas: "Cofu", "Teki", "Teki Industries" e os logotipos associados
+são marcas de Felipe Oliveira. Nos termos da seção 7(e) da AGPL, esta licença
+não concede nenhum direito de uso desses nomes ou marcas. Forks e trabalhos
+derivados devem usar outro nome e não podem sugerir que são oficiais ou
+endossados (ex.: "Cofu Lite", "CofuAI"). Detalhes em TRADEMARKS.md.
