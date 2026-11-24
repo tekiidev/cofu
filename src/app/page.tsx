@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { lerPedido, temPedido } from '@/lib/pedido.ts';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Cofo } from '@/components/Cofo.tsx';
 import { Entrada } from '@/components/Entrada.tsx';
@@ -38,9 +39,24 @@ export default function Inicio() {
     salvarModo(novo);
   }
 
+  // Pedido do link de abertura (Siri, compartilhar, atalho do ícone): lido uma vez só.
+  const [pedido, setPedido] = useState<{ texto: string | null; falar: boolean } | null>(null);
+  const pedidoLido = useRef(false);
+  useEffect(() => {
+    if (pedidoLido.current) return;
+    pedidoLido.current = true;
+    const p = lerPedido(new URLSearchParams(window.location.search));
+    // Tira da URL pra recarregar a página não adicionar a lista de novo.
+    if (temPedido(p)) window.history.replaceState(null, '', window.location.pathname);
+    lerModo().then((salvo) => {
+      setModo(p.modo ?? salvo);
+      if (p.modo) salvarModo(p.modo);
+      if (p.texto || p.falar) setPedido({ texto: p.texto, falar: p.falar });
+    });
+  }, []);
+
   useEffect(() => {
     lerOrcamento().then(setOrcamento);
-    lerModo().then(setModo);
     const atualizar = () => setOnline(navigator.onLine);
     atualizar();
     window.addEventListener('online', atualizar);
@@ -121,7 +137,7 @@ export default function Inicio() {
 
       {modo === 'figuras' && (
         <>
-          <Entrada onItens={receber} />
+          <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} />
           {aviso && (
             <p role="status" className="rounded-2xl bg-folha/10 px-4 py-3 text-base text-folha">
               {aviso}
@@ -167,7 +183,7 @@ export default function Inicio() {
         </div>
       </section>
 
-      <Entrada onItens={receber} />
+      <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} />
       {aviso && (
         <p role="status" className="rounded-2xl bg-folha/10 px-4 py-3 text-base text-folha">
           {aviso}
