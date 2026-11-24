@@ -11,6 +11,7 @@ type Reconhecimento = {
   continuous: boolean;
   start: () => void;
   stop: () => void;
+  abort?: () => void;
   onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
   onend: (() => void) | null;
   onerror: ((e: { error: string }) => void) | null;
@@ -64,13 +65,25 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
   const [vozSemRede, setVozSemRede] = useState(false);
   useEffect(() => setVozSemRede(false), [online]);
   const [dica, setDica] = useState<string | null>(null);
+  // A IA entende áudio: aí o microfone grava e manda o som direto pra ela, que já
+  // devolve os itens separados. É mais confiável que o reconhecimento de voz do
+  // navegador, que falha calado no iPhone e no app instalado na tela inicial.
+  const [audioIA, setAudioIA] = useState(false);
   const rec = useRef<Reconhecimento | null>(null);
+  const textoAtual = useRef('');
+  // Já mandou o que foi falado nesta escuta (o fim pode chegar pelo toque e pelo navegador).
+  const enviado = useRef(false);
+  textoAtual.current = texto;
   const base = useRef('');
   const botaoVoz = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setTemVoz(Boolean(criarReconhecimento()));
     setTemGravador(podeGravar());
+    fetch('/api/audio')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setAudioIA(j?.disponivel === true))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -90,15 +103,20 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedido]);
 
-  // Sem internet (ou sem reconhecimento de voz no navegador) o microfone grava o áudio
-  // pra fila, em vez de transcrever na hora.
-  const gravarAudio = temGravador && (!online || !temVoz || vozSemRede);
+  // Com a IA de áudio, sem internet ou sem reconhecimento de voz no navegador, o
+  // microfone grava o áudio (online ele vira lista na hora; offline espera na fila).
+  const gravarAudio = temGravador && (audioIA || !online || !temVoz || vozSemRede);
 
   /** true se começou a ouvir. */
   function alternarVoz(): boolean {
     setDica(null);
     if (ouvindo) {
-      rec.current?.stop();
+      // No iPhone o navegador às vezes ignora o stop(): o toque para na hora, monta a
+      // lista com o que já foi ouvido e, se ele continuar ligado, é cortado.
+      const r = rec.current;
+      r?.stop();
+      setTimeout(() => r?.abort?.(), 800);
+      terminarEscuta();
       return false;
     }
     const r = criarReconhecimento();
@@ -112,7 +130,7 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
       for (let i = 0; i < e.results.length; i += 1) falado += e.results[i][0].transcript;
       setTexto(base.current + falado.trim());
     };
-    r.onend = () => setOuvindo(false);
+    r.onend = terminarEscuta;
     r.onerror = (e) => {
       setOuvindo(false);
       if (e.error === 'not-allowed') setDica('Toque no microfone e fale o que vai comprar.');
@@ -123,6 +141,7 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
       }
     };
     rec.current = r;
+    enviado.current = false;
     try {
       r.start();
     } catch {
@@ -132,10 +151,21 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
     return true;
   }
 
+  /** Parou de ouvir (toque ou navegador): a lista já sai, sem tocar em "Montar lista". */
+  function terminarEscuta() {
+    setOuvindo(false);
+    if (enviado.current) return;
+    enviado.current = true;
+    if (textoAtual.current.trim()) enviar(textoAtual.current);
+  }
+
   async function enviar(valor = texto) {
     const t = valor.trim();
     if (!t || carregando) return;
+    // Se ainda estava ouvindo, o fim da escuta não manda de novo.
+    enviado.current = true;
     rec.current?.stop();
+    setOuvindo(false);
     setCarregando(true);
     const { itens, semIA, aviso } = await montar(t);
     setCarregando(false);

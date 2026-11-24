@@ -68,3 +68,8 @@ export async function montarListaDeAudio(wav: ArrayBuffer, clienteIp = 'desconhe
   if (!validado.success) throw new IAIndisponivel('resposta fora do formato');
   return validado.data;
 }
+
+/** A IA está configurada? (o app usa pra decidir se o microfone manda o áudio direto pra ela) */
+export function iaConfigurada(): boolean {
+  return Boolean(process.env.COFU_IA_URL && process.env.COFU_IA_TOKEN);
+}
