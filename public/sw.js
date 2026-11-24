@@ -3,7 +3,8 @@
 // - Arquivos do app (JS, CSS, fontes, ícones): usa a cópia guardada e atualiza por trás.
 // - /api/*: nunca guarda (a IA só funciona online).
 
-const VERSAO = 'cofu-v1';
+// A versão vem do build (?v= no registro); cada deploy ganha um cache novo e o velho é apagado.
+const VERSAO = `cofu-${new URL(self.location.href).searchParams.get('v') || 'dev'}`;
 const INICIAIS = ['/', '/icon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
