@@ -35,6 +35,13 @@ export const ListaSugeridaSchema = z.object({
 
 export type ItemSugerido = z.infer<typeof ItemSugeridoSchema>;
 
+/** Lista que veio de áudio: junto com os itens, o que a IA ouviu (a pessoa confere). */
+export const ListaDeAudioSchema = ListaSugeridaSchema.extend({
+  ouvido: z.string().trim().max(1200).catch(''),
+});
+
+export type ListaDeAudio = z.infer<typeof ListaDeAudioSchema>;
+
 export type Estado = 'lista' | 'cofo' | 'casa';
 
 export type Item = ItemSugerido & {

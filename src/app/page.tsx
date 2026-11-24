@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { lerPedido, temPedido } from '@/lib/pedido.ts';
+import { enviarFila } from '@/lib/fila.ts';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Cofo } from '@/components/Cofo.tsx';
 import { Entrada } from '@/components/Entrada.tsx';
@@ -67,6 +68,35 @@ export default function Inicio() {
     };
   }, []);
 
+  // Áudios gravados sem internet: viram lista quando a conexão volta.
+  const pendentes = useLiveQuery(() => db.audios.count(), [], 0);
+  const [montandoAudio, setMontandoAudio] = useState(false);
+  useEffect(() => {
+    if (!online || !pendentes) return;
+    setMontandoAudio(true);
+    enviarFila(async (r) => {
+      await adicionarItens(r.itens);
+      const n = r.itens.length;
+      setAviso(
+        n
+          ? `Do áudio: ${n} ${n === 1 ? 'item' : 'itens'} na lista.${r.ouvido ? ` Ouvi: "${r.ouvido}"` : ''}`
+          : `Não achei itens no áudio.${r.ouvido ? ` Ouvi: "${r.ouvido}"` : ''}`,
+      );
+    })
+      .then((res) => {
+        if (res.aviso) setAviso(res.aviso);
+      })
+      .finally(() => setMontandoAudio(false));
+  }, [online, pendentes]);
+
+  function audioGuardado() {
+    setAviso(
+      navigator.onLine
+        ? 'Áudio guardado. Montando a lista…'
+        : 'Áudio guardado. Quando a internet voltar, o Cofu monta a lista sozinho.',
+    );
+  }
+
   const lista = itens.filter((i) => i.estado === 'lista');
   const cofo = itens.filter((i) => i.estado === 'cofo');
   const casa = itens.filter((i) => i.estado === 'casa');
@@ -115,6 +145,25 @@ export default function Inicio() {
     onRemover: (i: Item) => removerItem(i.id),
   };
 
+  const avisos = (
+    <>
+      {aviso && (
+        <p role="status" className="rounded-2xl bg-folha/10 px-4 py-3 text-base text-folha">
+          {aviso}
+        </p>
+      )}
+      {pendentes > 0 && (
+        <p className="rounded-2xl bg-palha-clara/60 px-4 py-3 text-base text-babacu">
+          {montandoAudio
+            ? 'Montando a lista do áudio…'
+            : `${pendentes} ${pendentes === 1 ? 'áudio esperando' : 'áudios esperando'} ${
+                online ? 'pra virar lista.' : 'a internet voltar pra virar lista.'
+              }`}
+        </p>
+      )}
+    </>
+  );
+
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-24 pt-5">
       <header className="flex items-center justify-between">
@@ -137,12 +186,8 @@ export default function Inicio() {
 
       {modo === 'figuras' && (
         <>
-          <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} />
-          {aviso && (
-            <p role="status" className="rounded-2xl bg-folha/10 px-4 py-3 text-base text-folha">
-              {aviso}
-            </p>
-          )}
+          <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} online={online} onAudioGuardado={audioGuardado} />
+          {avisos}
           <ModoFiguras
             lista={lista}
             cofo={cofo}
@@ -183,12 +228,8 @@ export default function Inicio() {
         </div>
       </section>
 
-      <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} />
-      {aviso && (
-        <p role="status" className="rounded-2xl bg-folha/10 px-4 py-3 text-base text-folha">
-          {aviso}
-        </p>
-      )}
+      <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} online={online} onAudioGuardado={audioGuardado} />
+      {avisos}
 
       {/* Lista agrupada */}
       {grupos.map((g) => (

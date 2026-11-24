@@ -5,7 +5,7 @@ import { criarLimitador, ipDoCliente } from '@/lib/limite.ts';
 /**
  * POST /api/lista { texto } -> { itens }
  * Rota pública: limita tamanho do texto e quantas chamadas cada IP faz, e repassa
- * pro serviço da IA (COFU_SERVER_URL). Se ele falhar, responde 503
+ * pra IA configurada (COFU_IA_URL). Sem IA ou se ela falhar, responde 503
  * e o app usa o leitor simples no aparelho.
  */
 

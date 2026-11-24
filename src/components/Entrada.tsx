@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Gravador, podeGravar } from '@/components/Gravador.tsx';
 import { lerLista } from '@/lib/parse.ts';
 import type { ItemSugerido } from '@/lib/items.ts';
 
@@ -48,13 +49,20 @@ type Props = {
   pedido?: { texto: string | null; falar: boolean } | null;
   /** Avisa que o pedido foi usado, pra não repetir se a entrada for montada de novo. */
   onPedidoUsado?: () => void;
+  online?: boolean;
+  /** Áudio gravado e guardado na fila (vira lista quando a internet voltar). */
+  onAudioGuardado?: (segundos: number) => void;
 };
 
-export function Entrada({ onItens, pedido, onPedidoUsado }: Props) {
+export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudioGuardado }: Props) {
   const [texto, setTexto] = useState('');
   const [ouvindo, setOuvindo] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [temVoz, setTemVoz] = useState(false);
+  const [temGravador, setTemGravador] = useState(false);
+  // O navegador diz que está online, mas o reconhecimento de voz não alcançou o servidor.
+  const [vozSemRede, setVozSemRede] = useState(false);
+  useEffect(() => setVozSemRede(false), [online]);
   const [dica, setDica] = useState<string | null>(null);
   const rec = useRef<Reconhecimento | null>(null);
   const base = useRef('');
@@ -62,6 +70,7 @@ export function Entrada({ onItens, pedido, onPedidoUsado }: Props) {
 
   useEffect(() => {
     setTemVoz(Boolean(criarReconhecimento()));
+    setTemGravador(podeGravar());
   }, []);
 
   useEffect(() => {
@@ -80,6 +89,10 @@ export function Entrada({ onItens, pedido, onPedidoUsado }: Props) {
     // Roda uma vez por pedido.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedido]);
+
+  // Sem internet (ou sem reconhecimento de voz no navegador) o microfone grava o áudio
+  // pra fila, em vez de transcrever na hora.
+  const gravarAudio = temGravador && (!online || !temVoz || vozSemRede);
 
   /** true se começou a ouvir. */
   function alternarVoz(): boolean {
@@ -105,7 +118,8 @@ export function Entrada({ onItens, pedido, onPedidoUsado }: Props) {
       if (e.error === 'not-allowed') setDica('Toque no microfone e fale o que vai comprar.');
       // O reconhecimento de voz do navegador precisa de internet (no Chrome o áudio vai pro Google).
       if (e.error === 'network') {
-        setDica('Sem internet o microfone do Cofu não funciona. Toque na caixa de texto e use o microfone do teclado.');
+        setVozSemRede(true);
+        setDica('A internet caiu. Toque no microfone de novo pra gravar: o Cofu monta a lista quando a conexão voltar.');
       }
     };
     rec.current = r;
@@ -146,8 +160,17 @@ export function Entrada({ onItens, pedido, onPedidoUsado }: Props) {
         placeholder="Ex.: 2 kg de arroz, feijão, uma dúzia de ovos e café"
         className="mt-2 w-full resize-none rounded-2xl border border-babacu/20 bg-areia px-4 py-3 text-base placeholder:text-babacu/50 focus:border-folha focus:outline-none"
       />
-      <div className="mt-3 flex items-center gap-3">
-        {temVoz && (
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        {gravarAudio && (
+          <Gravador
+            onGuardado={(s) => {
+              setDica(null);
+              onAudioGuardado?.(s);
+            }}
+            onErro={setDica}
+          />
+        )}
+        {!gravarAudio && temVoz && (
           <button
             ref={botaoVoz}
             type="button"
