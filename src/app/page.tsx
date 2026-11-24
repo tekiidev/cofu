@@ -25,6 +25,7 @@ import {
 } from '@/lib/db.ts';
 import { CATEGORIAS, type Item, type ItemSugerido } from '@/lib/items.ts';
 import { reais, situacao } from '@/lib/money.ts';
+import { Assinatura } from '@/components/Assinatura.tsx';
 
 export default function Inicio() {
   const itens = useLiveQuery(() => db.itens.orderBy('criadoEm').toArray(), [], [] as Item[]);
@@ -295,9 +296,8 @@ export default function Inicio() {
 
       <footer className="pt-4 text-center text-sm text-babacu/60">
         Preços com ~ são estimativas. Seus dados ficam só neste aparelho.
-        <br />
-        feito com <a className="underline" href="https://github.com/tekiidev/teko">Teko</a>
       </footer>
+      <Assinatura />
     </main>
   );
 }
