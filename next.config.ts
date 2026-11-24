@@ -15,6 +15,8 @@ const config: NextConfig = {
   env: { NEXT_PUBLIC_VERSAO: versao },
   allowedDevOrigins: ipsDaRede,
   poweredByHeader: false,
+  // Não gerar AGENTS.md na raiz a cada `next dev`.
+  agentRules: false,
   reactStrictMode: true,
   async headers() {
     return [
