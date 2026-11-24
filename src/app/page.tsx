@@ -4,16 +4,22 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Cofo } from '@/components/Cofo.tsx';
 import { Entrada } from '@/components/Entrada.tsx';
+import { IconeVoltar } from '@/components/Icones.tsx';
+import { Pixel } from '@/components/Pixel.tsx';
 import { ItemLinha } from '@/components/ItemLinha.tsx';
+import { ModoFiguras } from '@/components/ModoFiguras.tsx';
 import {
   adicionarItens,
   atualizarItem,
   db,
+  lerModo,
   lerOrcamento,
   mudarEstado,
   novaFeira,
   removerItem,
+  salvarModo,
   salvarOrcamento,
+  type Modo,
 } from '@/lib/db.ts';
 import { CATEGORIAS, type Item, type ItemSugerido } from '@/lib/items.ts';
 import { reais, situacao } from '@/lib/money.ts';
@@ -24,9 +30,17 @@ export default function Inicio() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [pulso, setPulso] = useState(0);
   const [online, setOnline] = useState(true);
+  const [modo, setModo] = useState<Modo>('lista');
+
+  function trocarModo() {
+    const novo = modo === 'lista' ? 'figuras' : 'lista';
+    setModo(novo);
+    salvarModo(novo);
+  }
 
   useEffect(() => {
     lerOrcamento().then(setOrcamento);
+    lerModo().then(setModo);
     const atualizar = () => setOnline(navigator.onLine);
     atualizar();
     window.addEventListener('online', atualizar);
@@ -89,9 +103,47 @@ export default function Inicio() {
     <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-24 pt-5">
       <header className="flex items-center justify-between">
         <h1 className="font-titulo text-4xl font-semibold text-babacu">cofu</h1>
-        {!online && <span className="rounded-full bg-areia-escura px-3 py-1 text-sm text-babacu">sem internet</span>}
+        <div className="flex items-center gap-2">
+          {!online && <span className="rounded-full bg-areia-escura px-3 py-1 text-sm text-babacu">sem internet</span>}
+          <button
+            type="button"
+            onClick={trocarModo}
+            aria-pressed={modo === 'figuras'}
+            className={`flex min-h-11 items-center gap-2 rounded-full px-3 text-base font-bold ring-2 ${
+              modo === 'figuras' ? 'bg-babacu text-areia ring-babacu' : 'bg-white/70 text-babacu ring-babacu/25'
+            }`}
+          >
+            <Pixel figura="banana" className="h-6 w-6" />
+            Figuras
+          </button>
+        </div>
       </header>
 
+      {modo === 'figuras' && (
+        <>
+          <Entrada onItens={receber} />
+          {aviso && (
+            <p role="status" className="rounded-2xl bg-folha/10 px-4 py-3 text-base text-folha">
+              {aviso}
+            </p>
+          )}
+          <ModoFiguras
+            lista={lista}
+            cofo={cofo}
+            noCofo={s.noCofo}
+            // Sem preço nenhum, o cofo enche pela quantidade de itens.
+            progresso={s.totalLista > 0 ? s.progresso : cofo.length / Math.max(1, lista.length + cofo.length)}
+            temPreco={s.totalLista > 0}
+            estourou={s.estourou}
+            pulso={pulso}
+            onCofo={props.onCofo}
+            onVoltar={props.onVoltar}
+          />
+        </>
+      )}
+
+      {modo === 'lista' && (
+        <>
       {/* Cofo + orçamento */}
       <section className="flex items-center gap-4 rounded-3xl bg-areia-escura/70 p-4">
         <Cofo progresso={s.progresso} estourou={s.estourou} pulso={pulso} />
@@ -109,7 +161,7 @@ export default function Inicio() {
               key={orcamento ?? 'vazio'}
               placeholder="R$ 0"
               onBlur={(e) => mudarOrcamento(e.target.value)}
-              className="h-11 w-28 rounded-xl border border-babacu/25 bg-areia px-2 text-base"
+              className="h-11 w-full min-w-0 max-w-28 rounded-xl border border-babacu/25 bg-areia px-2 text-base"
             />
           </label>
         </div>
@@ -150,6 +202,8 @@ export default function Inicio() {
           </ul>
         </section>
       )}
+        </>
+      )}
 
       {casa.length > 0 && (
         <section className="rounded-3xl bg-areia-escura/60 p-4">
@@ -160,10 +214,10 @@ export default function Inicio() {
                 <button
                   type="button"
                   onClick={() => mudarEstado(item.id, 'lista')}
-                  className="min-h-11 rounded-full bg-white/80 px-4 text-base ring-1 ring-babacu/15"
+                  className="flex min-h-11 items-center gap-2 rounded-full bg-white/80 px-4 text-base ring-1 ring-babacu/15"
                   aria-label={`${item.nome}: acabou, voltar pra lista`}
                 >
-                  {item.nome} <span className="text-babacu/50">↩</span>
+                  {item.nome} <IconeVoltar className="h-4 w-4 text-babacu/50" />
                 </button>
               </li>
             ))}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { IconeCerto, IconeFechar } from '@/components/Icones.tsx';
 import { rotuloQuantidade, type Item } from '@/lib/items.ts';
 import { reais } from '@/lib/money.ts';
 
@@ -40,7 +41,7 @@ export function ItemLinha({ item, onCofo, onCasa, onVoltar, onPreco, onRemover }
             noCofo ? 'border-folha bg-folha text-areia' : 'border-babacu/40'
           }`}
         >
-          {noCofo && '✓'}
+          {noCofo && <IconeCerto />}
         </span>
         <span className="min-w-0">
           <span className={`block truncate text-lg ${noCofo ? 'text-babacu/50 line-through' : ''}`}>{item.nome}</span>
@@ -89,10 +90,10 @@ export function ItemLinha({ item, onCofo, onCasa, onVoltar, onPreco, onRemover }
       <button
         type="button"
         onClick={() => onRemover(item)}
-        className="flex h-12 w-11 items-center justify-center rounded-xl text-xl text-babacu/40"
+        className="flex h-12 w-11 items-center justify-center rounded-xl text-babacu/40"
         aria-label={`Apagar ${item.nome}`}
       >
-        ×
+        <IconeFechar />
       </button>
     </li>
   );

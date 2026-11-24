@@ -59,6 +59,17 @@ export async function novaFeira() {
   await db.itens.where('estado').equals('cofo').delete();
 }
 
+export type Modo = 'lista' | 'figuras';
+
+export async function lerModo(): Promise<Modo> {
+  const linha = await db.config.get('modo');
+  return linha?.valor === 'figuras' ? 'figuras' : 'lista';
+}
+
+export function salvarModo(modo: Modo) {
+  return db.config.put({ chave: 'modo', valor: modo });
+}
+
 export async function lerOrcamento(): Promise<number | null> {
   const linha = await db.config.get('orcamento');
   return typeof linha?.valor === 'number' ? linha.valor : null;
