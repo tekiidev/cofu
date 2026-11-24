@@ -5,7 +5,7 @@
 
 // A versão vem do build (?v= no registro); cada deploy ganha um cache novo e o velho é apagado.
 const VERSAO = `cofu-${new URL(self.location.href).searchParams.get('v') || 'dev'}`;
-const INICIAIS = ['/', '/icon.svg', '/manifest.webmanifest'];
+const INICIAIS = ['/', '/icon.svg', '/brand/tekidev.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(VERSAO).then((cache) => cache.addAll(INICIAIS)).then(() => self.skipWaiting()));
