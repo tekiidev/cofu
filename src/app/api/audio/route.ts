@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { IAIndisponivel, RecusadoPeloServidor, montarListaDeAudio } from '@/lib/ai.ts';
+import { IAIndisponivel, PedidoRecusado, montarListaDeAudio } from '@/lib/ai.ts';
 import { criarLimitador, ipDoCliente } from '@/lib/limite.ts';
 
 /**
  * POST /api/audio (corpo: WAV) -> { itens, ouvido }
  * O app grava e converte pra WAV no celular; aqui só confere o básico e repassa
- * pro servidor do Cofu, que valida o áudio de verdade e chama a IA.
+ * pra IA configurada, que valida o áudio de verdade.
  */
 
 // Áudio demora mais que texto pra a IA responder.
@@ -32,11 +32,11 @@ export async function POST(req: Request) {
   try {
     return NextResponse.json(await montarListaDeAudio(wav, ip));
   } catch (err) {
-    if (err instanceof RecusadoPeloServidor) return NextResponse.json({ erro: err.erro }, { status: err.status });
+    if (err instanceof PedidoRecusado) return NextResponse.json({ erro: err.erro }, { status: err.status });
     const motivo = err instanceof IAIndisponivel ? err.message : 'erro inesperado';
     console.error('[cofu/audio]', motivo);
-    // Sem servidor configurado o áudio não tem como virar lista: o app guarda e avisa.
-    const status = motivo === 'servidor do Cofu não configurado' ? 501 : 503;
+    // Sem IA configurada o áudio não tem como virar lista: o app guarda e avisa.
+    const status = motivo === 'IA não configurada' ? 501 : 503;
     return NextResponse.json({ erro: status === 501 ? 'Lista por áudio ainda não está disponível.' : 'IA indisponível agora.' }, { status });
   }
 }

@@ -27,9 +27,9 @@ O nome vem do **cofo**, o cesto de palha trançada do Maranhão usado pra carreg
 - 🎙️ **Voz primeiro**: "2 kg de arroz, uma dúzia de ovos e café" vira lista com item, quantidade, unidade, categoria e preço estimado
 - **Grava sem internet**: no mercado sem sinal, grave a lista falada; quando a conexão volta, a IA ouve o áudio e monta a lista sozinha
 - 📴 **Funciona offline**: PWA com service worker; lista, checklist e cofo ficam no aparelho (IndexedDB com Dexie)
-- 🧠 **IA com rede de segurança**: sem internet, sem serviço configurado ou se a IA falhar, um leitor local monta a lista mesmo assim
+- 🧠 **IA com rede de segurança**: sem internet, sem IA configurada ou se ela falhar, um leitor local monta a lista mesmo assim
 - ✅ **Saída da IA validada**: toda resposta passa por um schema Zod antes de entrar na lista; categoria desconhecida vira "Outros" e item inválido é recusado
-- 🔐 **Chave fora do app**: a IA roda num serviço separado, chamado com token; o app nunca vê a chave do modelo
+- 🔐 **Chave fora do navegador**: a IA é chamada só pelo servidor do app; o navegador nunca vê chave nem token
 - ♿ **Acessível**: alvos de toque de 44 px, fonte mínima de 16 px, contraste alto e fonte Atkinson Hyperlegible
 - 🛡️ **Cabeçalhos de segurança** em todas as páginas e permissão de microfone só pro próprio site
 
@@ -39,7 +39,7 @@ O nome vem do **cofo**, o cesto de palha trançada do Maranhão usado pra carreg
 flowchart LR
   U[Você fala ou escreve] --> E[Entrada]
   E -->|online| API["/api/lista<br/>(rota no servidor)"]
-  API -->|token| IA[Serviço de IA]
+  API -->|token| IA[IA opcional<br/>configurável por URL]
   IA --> Z{Zod valida}
   E -->|offline ou falha| P[Leitor local<br/>parse.ts]
   Z -->|ok| L[(Lista no aparelho<br/>IndexedDB)]
@@ -76,11 +76,11 @@ Requer Node 22.5+.
 ```bash
 git clone https://github.com/tekiidev/cofu.git && cd cofu
 npm install
-cp .env.example .env    # opcional: URL e token do serviço de IA
+cp .env.example .env    # opcional: URL e token da IA
 npm run dev             # http://localhost:4790
 ```
 
-Sem `COFU_SERVER_URL` e `COFU_SERVER_TOKEN`, o app usa só o leitor local.
+Sem `COFU_IA_URL` e `COFU_IA_TOKEN`, o app usa só o leitor local.
 
 ```bash
 npm run typecheck       # tipos (Next typegen + tsc)
@@ -96,11 +96,11 @@ A CI roda tipos, testes e build em Node 22 e 24 a cada PR.
 src/
   app/
     page.tsx              tela principal: entrada, lista e cofo
-    api/lista/route.ts    repassa o pedido pro serviço de IA (só no servidor)
+    api/lista/route.ts    repassa o pedido pra IA configurada (só no servidor)
     manifest.ts           manifesto do PWA
   components/             Entrada, ItemLinha, Cofo, registro do service worker
   lib/
-    ai.ts                 cliente do serviço de IA, com timeout e validação
+    ai.ts                 cliente da IA (opcional), com timeout e validação
     parse.ts              leitor local sem IA ("2 kg de arroz e café")
     items.ts              schemas Zod dos itens e categorias
     db.ts                 IndexedDB (Dexie): lista, cofo, prateleira e áudios guardados
@@ -119,7 +119,7 @@ test/                     leitor local, schema da IA e soma do cofo
 | IndexedDB local | Os dados ficam com a pessoa; a lista abre sem internet no meio do mercado |
 | Leitor local como reserva | A IA é ajuda, não requisito: sem sinal, a lista sai do mesmo jeito |
 | Zod na fronteira com a IA | Modelo pode inventar formato; nada entra na lista sem passar pelo schema |
-| IA num serviço separado | A chave do modelo nunca chega no app nem no navegador |
+| IA opcional, configurável por URL | O app funciona sem ela, e a chave do modelo nunca chega no navegador |
 
 ## Próximos passos
 
