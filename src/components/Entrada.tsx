@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Gravador, podeGravar } from '@/components/Gravador.tsx';
+import { Gravador, microfoneBloqueadoSemHttps, podeGravar } from '@/components/Gravador.tsx';
+import { IconeEnviar, IconeMicrofone } from '@/components/Icones.tsx';
 import { lerLista } from '@/lib/parse.ts';
 import type { ItemSugerido } from '@/lib/items.ts';
 
@@ -80,6 +81,8 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
   useEffect(() => {
     setTemVoz(Boolean(criarReconhecimento()));
     setTemGravador(podeGravar());
+    // Acontece ao testar pelo IP da rede (http://192.168…): o navegador esconde o microfone.
+    if (microfoneBloqueadoSemHttps()) setDica('O microfone só aparece com https. Abra o Cofu por um link https pra gravar.');
     fetch('/api/audio')
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => setAudioIA(j?.disponivel === true))
@@ -173,64 +176,96 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
     if (itens.length) setTexto('');
   }
 
+  // Campo cresce com o texto até umas 4 linhas, depois rola (como no WhatsApp).
+  const campo = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const c = campo.current;
+    if (!c) return;
+    c.style.height = 'auto';
+    c.style.height = `${Math.min(c.scrollHeight, 136)}px`;
+  }, [texto]);
+
+  // Com texto, o botão redondo vira enviar. Ouvindo, continua sendo o microfone (pra parar).
+  const mostrarEnviar = Boolean(texto.trim()) && !ouvindo;
+  const redondo = 'flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-areia shadow-md transition';
+
   return (
-    <section className="rounded-3xl bg-white/70 p-4 shadow-sm ring-1 ring-babacu/10">
-      <label htmlFor="entrada" className="font-titulo text-lg text-babacu">
-        O que vai comprar?
-      </label>
-      <textarea
-        id="entrada"
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) enviar();
-        }}
-        rows={3}
-        maxLength={1200}
-        placeholder="Ex.: 2 kg de arroz, feijão, uma dúzia de ovos e café"
-        className="mt-2 w-full resize-none rounded-2xl border border-babacu/20 bg-areia px-4 py-3 text-base placeholder:text-babacu/50 focus:border-folha focus:outline-none"
-      />
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        {gravarAudio && (
-          <Gravador
-            onGuardado={(s) => {
-              setDica(null);
-              onAudioGuardado?.(s);
+    // Preso embaixo da tela, como a caixa de mensagem do WhatsApp; a lista rola em cima.
+    <section
+      aria-label="Escrever ou gravar a lista"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-babacu/10 bg-areia/95 backdrop-blur"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="mx-auto max-w-xl px-3 pb-3 pt-2">
+        {ouvindo && <p className="mb-2 px-2 text-base text-terracota">Ouvindo… fale os itens e toque de novo pra parar.</p>}
+        {dica && !ouvindo && (
+          <p role="status" className="mb-2 rounded-2xl bg-folha/10 px-3 py-2 text-base text-folha">
+            {dica}
+          </p>
+        )}
+        <div className="relative flex items-end gap-2">
+          <label htmlFor="entrada" className="sr-only">
+            O que vai comprar?
+          </label>
+          <textarea
+            ref={campo}
+            suppressHydrationWarning // autofill do celular injeta __gcruniqueid
+            id="entrada"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) enviar();
             }}
-            onErro={setDica}
+            rows={1}
+            maxLength={1200}
+            placeholder="O que vai comprar?"
+            className="max-h-34 min-h-14 min-w-0 flex-1 resize-none rounded-3xl border border-babacu/20 bg-white px-5 py-3.5 text-lg leading-snug placeholder:text-babacu/50 focus:border-folha focus:outline-none"
           />
-        )}
-        {!gravarAudio && temVoz && (
-          <button
-            ref={botaoVoz}
-            type="button"
-            onClick={alternarVoz}
-            aria-pressed={ouvindo}
-            aria-label={ouvindo ? 'Parar de ouvir' : 'Falar a lista'}
-            className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-areia shadow-md transition ${
-              ouvindo ? 'animate-pulse bg-terracota' : 'bg-folha'
-            }`}
-          >
-            <svg viewBox="0 0 24 24" className="h-8 w-8" fill="currentColor" aria-hidden="true">
-              <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z" />
-            </svg>
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => enviar()}
-          disabled={!texto.trim() || carregando}
-          className="min-h-14 flex-1 rounded-2xl bg-babacu px-5 text-lg font-bold text-areia shadow-md transition disabled:opacity-40"
-        >
-          {carregando ? 'Montando…' : 'Montar lista'}
-        </button>
+          {mostrarEnviar ? (
+            <button
+              type="button"
+              onClick={() => enviar()}
+              disabled={carregando}
+              aria-label={carregando ? 'Montando a lista' : 'Montar lista'}
+              className={`${redondo} bg-folha disabled:opacity-60`}
+            >
+              {carregando ? (
+                <span aria-hidden="true" className="h-6 w-6 animate-spin rounded-full border-[3px] border-areia/40 border-t-areia" />
+              ) : (
+                <IconeEnviar className="h-7 w-7" />
+              )}
+            </button>
+          ) : gravarAudio ? (
+            <Gravador
+              onGuardado={(s) => {
+                setDica(null);
+                onAudioGuardado?.(s);
+              }}
+              onErro={setDica}
+            />
+          ) : temVoz ? (
+            <button
+              ref={botaoVoz}
+              type="button"
+              onClick={alternarVoz}
+              aria-pressed={ouvindo}
+              aria-label={ouvindo ? 'Parar de ouvir' : 'Falar a lista'}
+              className={`${redondo} ${ouvindo ? 'animate-pulse bg-terracota' : 'bg-folha'}`}
+            >
+              <IconeMicrofone className="h-7 w-7" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled
+              aria-label="Escreva a lista pra montar"
+              className={`${redondo} bg-folha opacity-40`}
+            >
+              <IconeEnviar className="h-7 w-7" />
+            </button>
+          )}
+        </div>
       </div>
-      {ouvindo && <p className="mt-2 text-base text-terracota">Ouvindo… fale os itens e toque de novo pra parar.</p>}
-      {dica && !ouvindo && (
-        <p role="status" className="mt-2 text-base text-folha">
-          {dica}
-        </p>
-      )}
     </section>
   );
 }
