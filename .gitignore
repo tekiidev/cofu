@@ -8,3 +8,7 @@ next-env.d.ts
 !.env.example
 .DS_Store
 .vercel
+
+certificates
+# Certificados locais do mkcert (HTTPS no celular)
+*.pem

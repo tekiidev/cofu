@@ -26,6 +26,7 @@ O nome vem do **cofo**, o cesto de palha trançada do Maranhão usado pra carreg
 
 - 🎙️ **Voz primeiro**: "2 kg de arroz, uma dúzia de ovos e café" vira lista com item, quantidade, unidade, categoria e preço estimado
 - **Grava sem internet**: no mercado sem sinal, grave a lista falada; quando a conexão volta, a IA ouve o áudio e monta a lista sozinha
+- 💬 **Grava como no WhatsApp**: segure pra gravar, deslize pra cancelar, suba até o cadeado pra gravar sem segurar; pause, ouça antes de enviar e veja a onda da voz ao vivo. Toque rápido e teclado também gravam, e as animações respeitam "reduzir movimento"
 - 📴 **Funciona offline**: PWA com service worker; lista, checklist e cofo ficam no aparelho (IndexedDB com Dexie)
 - 🧠 **IA com rede de segurança**: sem internet, sem IA configurada ou se ela falhar, um leitor local monta a lista mesmo assim
 - ✅ **Saída da IA validada**: toda resposta passa por um schema Zod antes de entrar na lista; categoria desconhecida vira "Outros" e item inválido é recusado
@@ -98,7 +99,7 @@ src/
     page.tsx              tela principal: entrada, lista e cofo
     api/lista/route.ts    repassa o pedido pra IA configurada (só no servidor)
     manifest.ts           manifesto do PWA
-  components/             Entrada, ItemLinha, Cofo, registro do service worker
+  components/             Entrada (caixa presa embaixo), Gravador, OndaAudio, ItemLinha, Cofo, registro do service worker
   lib/
     ai.ts                 cliente da IA (opcional), com timeout e validação
     parse.ts              leitor local sem IA ("2 kg de arroz e café")
@@ -106,9 +107,11 @@ src/
     db.ts                 IndexedDB (Dexie): lista, cofo, prateleira e áudios guardados
     wav.ts                converte a gravação pra WAV mono 16 kHz no celular
     fila.ts               manda os áudios guardados pra IA quando a internet volta
+    gesto.ts              gesto do microfone: segurar, deslizar pra cancelar, subir pra travar
+    onda.ts               nível da voz e barras da onda (ao vivo e do áudio inteiro)
     money.ts              soma do cofo, formato em reais e referência de preço
 public/sw.js              service worker (offline)
-test/                     leitor local, schema da IA e soma do cofo
+test/                     leitor local, schema da IA, soma do cofo, gesto e onda
 ```
 
 ## Decisões

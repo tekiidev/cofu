@@ -35,11 +35,16 @@ export function situacao(itens: Pick<Item, 'preco' | 'estado'>[], orcamento: num
   const noCofo = somar(itens.filter((i) => i.estado === 'cofo'));
   const totalLista = noCofo + somar(itens.filter((i) => i.estado === 'lista'));
   if (!orcamento || orcamento <= 0) {
+    // Enche pelo valor só se todo item tem preço; senão (lista falada, sem preço)
+    // enche pela quantidade de itens, pra cada item que entra encher um pedaço.
+    const daFeira = itens.filter((i) => i.estado === 'cofo' || i.estado === 'lista');
+    const porValor = totalLista > 0 && daFeira.every((i) => i.preco != null);
+    const itensNoCofo = daFeira.filter((i) => i.estado === 'cofo').length;
     return {
       noCofo,
       totalLista,
       orcamento: null,
-      progresso: totalLista > 0 ? noCofo / totalLista : 0,
+      progresso: porValor ? noCofo / totalLista : daFeira.length ? itensNoCofo / daFeira.length : 0,
       estourou: false,
       mensagem: noCofo > 0 ? `${reais(noCofo)} no cofo` : 'Toque nos itens pra colocar no cofo',
     };

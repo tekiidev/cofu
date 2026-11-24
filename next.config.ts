@@ -13,7 +13,8 @@ const versao = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8) || Date.now().toSt
 
 const config: NextConfig = {
   env: { NEXT_PUBLIC_VERSAO: versao },
-  allowedDevOrigins: ipsDaRede,
+  // E o túnel HTTPS (cloudflared) pra testar o microfone no celular.
+  allowedDevOrigins: [...ipsDaRede, '*.trycloudflare.com'],
   poweredByHeader: false,
   // Não gerar AGENTS.md na raiz a cada `next dev`.
   agentRules: false,
