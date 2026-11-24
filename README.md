@@ -25,6 +25,7 @@ O nome vem do **cofo**, o cesto de palha trançada do Maranhão usado pra carreg
 ## Destaques
 
 - 🎙️ **Voz primeiro**: "2 kg de arroz, uma dúzia de ovos e café" vira lista com item, quantidade, unidade, categoria e preço estimado
+- **Grava sem internet**: no mercado sem sinal, grave a lista falada; quando a conexão volta, a IA ouve o áudio e monta a lista sozinha
 - 📴 **Funciona offline**: PWA com service worker; lista, checklist e cofo ficam no aparelho (IndexedDB com Dexie)
 - 🧠 **IA com rede de segurança**: sem internet, sem serviço configurado ou se a IA falhar, um leitor local monta a lista mesmo assim
 - ✅ **Saída da IA validada**: toda resposta passa por um schema Zod antes de entrar na lista; categoria desconhecida vira "Outros" e item inválido é recusado
@@ -102,7 +103,9 @@ src/
     ai.ts                 cliente do serviço de IA, com timeout e validação
     parse.ts              leitor local sem IA ("2 kg de arroz e café")
     items.ts              schemas Zod dos itens e categorias
-    db.ts                 IndexedDB (Dexie): lista, cofo e prateleira
+    db.ts                 IndexedDB (Dexie): lista, cofo, prateleira e áudios guardados
+    wav.ts                converte a gravação pra WAV mono 16 kHz no celular
+    fila.ts               manda os áudios guardados pra IA quando a internet volta
     money.ts              soma do cofo, formato em reais e referência de preço
 public/sw.js              service worker (offline)
 test/                     leitor local, schema da IA e soma do cofo

@@ -4,14 +4,18 @@ import { planejarJuntar } from './juntar.ts';
 
 /**
  * Tudo fica no aparelho (IndexedDB), então a lista funciona sem internet.
- * Nada disso vai pra servidor na fase 1.
+ * Só sai do aparelho o texto ou o áudio que a pessoa manda pra IA montar a lista.
  */
 
 type Config = { chave: string; valor: unknown };
 
+/** Áudio gravado sem internet, esperando pra virar lista (WAV mono 16 kHz). */
+export type AudioGuardado = { id: string; criadoEm: number; wav: Blob; segundos: number };
+
 class CofuDB extends Dexie {
   itens!: EntityTable<Item, 'id'>;
   config!: EntityTable<Config, 'chave'>;
+  audios!: EntityTable<AudioGuardado, 'id'>;
 
   constructor() {
     super('cofu');
@@ -19,6 +23,7 @@ class CofuDB extends Dexie {
       itens: 'id, estado, criadoEm',
       config: 'chave',
     });
+    this.version(2).stores({ audios: 'id, criadoEm' });
   }
 }
 
@@ -77,4 +82,8 @@ export async function lerOrcamento(): Promise<number | null> {
 
 export function salvarOrcamento(valor: number | null) {
   return valor ? db.config.put({ chave: 'orcamento', valor }) : db.config.delete('orcamento');
+}
+
+export async function guardarAudio(wav: Blob, segundos: number) {
+  await db.audios.add({ id: novoId(), criadoEm: Date.now(), wav, segundos });
 }
