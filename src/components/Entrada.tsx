@@ -64,13 +64,23 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
   const [vozSemRede, setVozSemRede] = useState(false);
   useEffect(() => setVozSemRede(false), [online]);
   const [dica, setDica] = useState<string | null>(null);
+  // A IA entende áudio: aí o microfone grava e manda o som direto pra ela, que já
+  // devolve os itens separados. É mais confiável que o reconhecimento de voz do
+  // navegador, que falha calado no iPhone e no app instalado na tela inicial.
+  const [audioIA, setAudioIA] = useState(false);
   const rec = useRef<Reconhecimento | null>(null);
+  const textoAtual = useRef('');
+  textoAtual.current = texto;
   const base = useRef('');
   const botaoVoz = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setTemVoz(Boolean(criarReconhecimento()));
     setTemGravador(podeGravar());
+    fetch('/api/audio')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setAudioIA(j?.disponivel === true))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -90,9 +100,9 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedido]);
 
-  // Sem internet (ou sem reconhecimento de voz no navegador) o microfone grava o áudio
-  // pra fila, em vez de transcrever na hora.
-  const gravarAudio = temGravador && (!online || !temVoz || vozSemRede);
+  // Com a IA de áudio, sem internet ou sem reconhecimento de voz no navegador, o
+  // microfone grava o áudio (online ele vira lista na hora; offline espera na fila).
+  const gravarAudio = temGravador && (audioIA || !online || !temVoz || vozSemRede);
 
   /** true se começou a ouvir. */
   function alternarVoz(): boolean {
@@ -112,7 +122,11 @@ export function Entrada({ onItens, pedido, onPedidoUsado, online = true, onAudio
       for (let i = 0; i < e.results.length; i += 1) falado += e.results[i][0].transcript;
       setTexto(base.current + falado.trim());
     };
-    r.onend = () => setOuvindo(false);
+    r.onend = () => {
+      setOuvindo(false);
+      // Parou de falar: a lista já sai, sem precisar tocar em "Montar lista".
+      if (textoAtual.current.trim()) enviar(textoAtual.current);
+    };
     r.onerror = (e) => {
       setOuvindo(false);
       if (e.error === 'not-allowed') setDica('Toque no microfone e fale o que vai comprar.');

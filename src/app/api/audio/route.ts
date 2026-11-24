@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { IAIndisponivel, PedidoRecusado, montarListaDeAudio } from '@/lib/ai.ts';
+import { IAIndisponivel, PedidoRecusado, iaConfigurada, montarListaDeAudio } from '@/lib/ai.ts';
 import { criarLimitador, ipDoCliente } from '@/lib/limite.ts';
 
 /**
@@ -14,6 +14,11 @@ export const maxDuration = 60;
 const MAX_BYTES = 2_500_000;
 // Áudio custa mais que texto: limite menor que o da lista por texto.
 const limitado = criarLimitador({ janelaMs: 10 * 60_000, max: 6 });
+
+/** GET /api/audio -> { disponivel }: com a IA ligada, o microfone manda o áudio direto pra ela. */
+export function GET() {
+  return NextResponse.json({ disponivel: iaConfigurada() }, { headers: { 'cache-control': 'no-store' } });
+}
 
 export async function POST(req: Request) {
   const ip = ipDoCliente(req.headers);
