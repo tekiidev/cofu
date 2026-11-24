@@ -27,7 +27,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${fraunces.variable} ${atkinson.variable}`}>
+    // suppressHydrationWarning: o navegador do celular (autofill do Google) injeta
+    // atributos __gcr* antes do React carregar. Só ignora atributos deste elemento.
+    <html lang="pt-BR" className={`${fraunces.variable} ${atkinson.variable}`} suppressHydrationWarning>
       <body>
         {children}
         <RegistrarServiceWorker />

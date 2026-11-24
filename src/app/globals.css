@@ -50,3 +50,82 @@ body {
   outline: 3px solid var(--color-folha);
   outline-offset: 2px;
 }
+
+/* Onda do áudio ao vivo: as barras deslizam pro lado em vez de pular. */
+.onda rect { transition: height 90ms linear, y 90ms linear; }
+@media (prefers-reduced-motion: reduce) {
+  .onda rect { transition: none; }
+}
+
+/* Gravando, estilo WhatsApp. Usa as propriedades `scale`/`translate` pra não brigar
+   com o `transform` que segue o dedo. */
+@keyframes piscar { 50% { opacity: 0.15; } }
+.piscar { animation: piscar 1s ease-in-out infinite; }
+
+@keyframes cutucar { 50% { translate: -4px 0; } }
+.cutucar { display: inline-block; animation: cutucar 1s ease-in-out infinite; }
+
+@keyframes subir { 50% { translate: 0 -3px; } }
+.subir { display: block; animation: subir 900ms ease-in-out infinite; }
+
+@keyframes surgir { from { opacity: 0; scale: 0.6; } }
+.surgir { animation: surgir 180ms ease-out; }
+
+/* Texto "Deslize pra cancelar" com um brilho passando, como no WhatsApp. */
+@keyframes brilho { to { background-position: -200% 0; } }
+.brilho {
+  background: linear-gradient(90deg, var(--color-babacu) 40%, var(--color-palha-clara) 50%, var(--color-babacu) 60%) 0 0 / 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: brilho 1.8s linear infinite;
+}
+
+.halo { transition: transform 90ms linear; }
+
+@media (prefers-reduced-motion: reduce) {
+  .piscar, .cutucar, .subir, .surgir, .brilho { animation: none; }
+  .brilho { color: var(--color-babacu); background: none; }
+  .halo { display: none; }
+}
+
+/* Apagar, travar e enviar o áudio (900 ms no total pra lixeira, igual APAGAR_MS). */
+@keyframes lixo-mic {
+  0% { translate: 0 0; rotate: 0deg; opacity: 1; }
+  30% { translate: 0 -30px; rotate: 180deg; }
+  60% { translate: 0 6px; rotate: 360deg; opacity: 1; }
+  70%, 100% { translate: 0 14px; opacity: 0; }
+}
+.lixo-mic { animation: lixo-mic 900ms ease-in-out forwards; }
+
+@keyframes lixo-balde {
+  0%, 25% { translate: 0 40px; opacity: 0; }
+  40%, 75% { translate: 0 0; opacity: 1; }
+  100% { translate: 0 40px; opacity: 0; }
+}
+.lixo-balde { animation: lixo-balde 900ms ease-in-out forwards; }
+
+/* A tampa abre enquanto o microfone cai e fecha logo depois. */
+@keyframes lixo-tampa {
+  0%, 35% { rotate: -35deg; }
+  65%, 100% { rotate: 0deg; }
+}
+.lixo-tampa { transform-box: fill-box; transform-origin: 0% 100%; animation: lixo-tampa 900ms ease-in-out forwards; }
+
+@keyframes trancar {
+  0% { opacity: 1; scale: 1; }
+  40% { opacity: 1; scale: 1.25; }
+  100% { opacity: 0; scale: 0.8; translate: -50% -12px; }
+}
+.trancar { animation: trancar 500ms ease-out forwards; }
+
+@keyframes pulo { 0% { scale: 0.4; } 60% { scale: 1.2; } 100% { scale: 1; } }
+.pulo { animation: pulo 260ms ease-out; }
+
+@keyframes entrar { from { opacity: 0; translate: 8px 0; } }
+.entrar { animation: entrar 200ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lixo-mic, .lixo-balde, .lixo-tampa, .pulo, .entrar { animation: none; }
+  .trancar { display: none; }
+}

@@ -166,7 +166,8 @@ export default function Inicio() {
   );
 
   return (
-    <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-24 pt-5">
+    // pb: espaço pra lista não ficar atrás da caixa de escrever, que fica presa embaixo.
+    <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-40 pt-5">
       <header className="flex items-center justify-between">
         <h1 className="font-titulo text-4xl font-semibold text-babacu">cofu</h1>
         <div className="flex items-center gap-2">
@@ -187,7 +188,6 @@ export default function Inicio() {
 
       {modo === 'figuras' && (
         <>
-          <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} online={online} onAudioGuardado={audioGuardado} />
           {avisos}
           <ModoFiguras
             lista={lista}
@@ -218,6 +218,7 @@ export default function Inicio() {
           <label className="mt-2 flex items-center gap-2 text-base text-babacu/80">
             Orçamento
             <input
+              suppressHydrationWarning // autofill do celular injeta __gcruniqueid
               inputMode="decimal"
               defaultValue={orcamento ?? ''}
               key={orcamento ?? 'vazio'}
@@ -229,7 +230,6 @@ export default function Inicio() {
         </div>
       </section>
 
-      <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} online={online} onAudioGuardado={audioGuardado} />
       {avisos}
 
       {/* Lista agrupada */}
@@ -297,6 +297,8 @@ export default function Inicio() {
       <footer className="pt-4 text-center text-sm text-babacu/60">
         Preços com ~ são estimativas. Seus dados ficam só neste aparelho.
       </footer>
+
+      <Entrada onItens={receber} pedido={pedido} onPedidoUsado={() => setPedido(null)} online={online} onAudioGuardado={audioGuardado} />
       <Assinatura />
     </main>
   );
