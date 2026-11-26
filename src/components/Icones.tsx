@@ -112,3 +112,19 @@ export function IconeTocar({ className = 'h-6 w-6' }: Props) {
     </svg>
   );
 }
+
+export function IconeMais({ className = 'h-5 w-5' }: Props) {
+  return (
+    <svg {...base} strokeWidth={2.75} className={className}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function IconeMenos({ className = 'h-5 w-5' }: Props) {
+  return (
+    <svg {...base} strokeWidth={2.75} className={className}>
+      <path d="M5 12h14" />
+    </svg>
+  );
+}

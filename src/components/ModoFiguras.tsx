@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { AjusteQuantidade } from '@/components/AjusteQuantidade.tsx';
 import { Cofo } from '@/components/Cofo.tsx';
 import { IconeSom } from '@/components/Icones.tsx';
 import { Pixel } from '@/components/Pixel.tsx';
 import { falar, podeFalar, textoFalado } from '@/lib/fala.ts';
 import { figuraDoItem, type NomeFigura } from '@/lib/figuras.ts';
-import { rotuloQuantidade, type Item } from '@/lib/items.ts';
+import type { Item } from '@/lib/items.ts';
 import { reais } from '@/lib/money.ts';
 
 type Props = {
@@ -19,6 +20,7 @@ type Props = {
   pulso: number;
   onCofo: (item: Item) => void;
   onVoltar: (item: Item) => void;
+  onQuantidade: (item: Item, direcao: 1 | -1) => void;
 };
 
 type Arrasto = { item: Item; figura: NomeFigura; x: number; y: number; sobre: boolean };
@@ -31,7 +33,7 @@ const LIMIAR = 12;
  * Arraste o item pro cofo, ou só toque nele (arrastar nunca é o único jeito).
  * O botão de som lê o nome e a quantidade em voz alta.
  */
-export function ModoFiguras({ lista, cofo, noCofo, progresso, temPreco, estourou, pulso, onCofo, onVoltar }: Props) {
+export function ModoFiguras({ lista, cofo, noCofo, progresso, temPreco, estourou, pulso, onCofo, onVoltar, onQuantidade }: Props) {
   const alvo = useRef<HTMLDivElement>(null);
   const inicio = useRef<{ id: number; x: number; y: number } | null>(null);
   const arrastou = useRef(false);
@@ -104,10 +106,12 @@ export function ModoFiguras({ lista, cofo, noCofo, progresso, temPreco, estourou
       <ul className="flex flex-col gap-2" aria-label="Falta pegar">
         {lista.map((item) => {
           const figura = figuraDoItem(item.nome, item.categoria);
-          const qtd = rotuloQuantidade(item);
           const levantado = arrasto?.item.id === item.id;
           return (
-            <li key={item.id} className="relative">
+            <li
+              key={item.id}
+              className={`relative rounded-2xl bg-white/80 pb-2 ring-1 ring-babacu/10 ${levantado ? 'opacity-30' : ''}`}
+            >
               <button
                 type="button"
                 onPointerDown={aoDescer}
@@ -124,14 +128,12 @@ export function ModoFiguras({ lista, cofo, noCofo, progresso, temPreco, estourou
                 }}
                 aria-label={`Colocar ${textoFalado(item)} no cofo`}
                 style={{ touchAction: 'pan-y' }}
-                className={`flex min-h-24 w-full select-none flex-col items-center justify-center gap-1 rounded-2xl bg-white/80 p-2 text-center ring-1 ring-babacu/10 ${
-                  levantado ? 'opacity-30' : ''
-                }`}
+                className="flex min-h-20 w-full select-none flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center"
               >
                 <Pixel figura={figura} className="h-14 w-14" />
                 <span className="text-lg leading-tight break-words">{item.nome}</span>
-                {qtd && <span className="text-base text-babacu/70">{qtd}</span>}
               </button>
+              <AjusteQuantidade item={item} onMudar={onQuantidade} />
               {comVoz && (
                 <button
                   type="button"
