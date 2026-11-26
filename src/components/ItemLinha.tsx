@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AjusteQuantidade } from '@/components/AjusteQuantidade.tsx';
 import { IconeCerto, IconeFechar } from '@/components/Icones.tsx';
 import { rotuloQuantidade, type Item } from '@/lib/items.ts';
 import { reais } from '@/lib/money.ts';
@@ -12,12 +13,14 @@ type Props = {
   onVoltar: (item: Item) => void;
   onPreco: (item: Item, preco: number | null) => void;
   onRemover: (item: Item) => void;
+  onQuantidade: (item: Item, direcao: 1 | -1) => void;
 };
 
-/** Tocar no item = ele cai no cofo. "Tem em casa" manda pra prateleira. */
-export function ItemLinha({ item, onCofo, onCasa, onVoltar, onPreco, onRemover }: Props) {
+/** Tocar no item = ele cai no cofo. "Tem em casa" manda pra prateleira. Tocar na quantidade abre o − e +. */
+export function ItemLinha({ item, onCofo, onCasa, onVoltar, onPreco, onRemover, onQuantidade }: Props) {
   const [saindo, setSaindo] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [ajustando, setAjustando] = useState(false);
   const noCofo = item.estado === 'cofo';
   const qtd = rotuloQuantidade(item);
 
@@ -28,7 +31,8 @@ export function ItemLinha({ item, onCofo, onCasa, onVoltar, onPreco, onRemover }
   }
 
   return (
-    <li className={`flex items-center gap-2 rounded-2xl bg-white/80 p-2 ring-1 ring-babacu/10 ${saindo ? 'cair' : ''}`}>
+    <li className={`flex flex-col rounded-2xl bg-white/80 p-2 ring-1 ring-babacu/10 ${saindo ? 'cair' : ''}`}>
+      <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={tocar}
@@ -45,7 +49,7 @@ export function ItemLinha({ item, onCofo, onCasa, onVoltar, onPreco, onRemover }
         </span>
         <span className="min-w-0">
           <span className={`block truncate text-lg ${noCofo ? 'text-babacu/50 line-through' : ''}`}>{item.nome}</span>
-          {qtd && <span className="block text-base text-babacu/70">{qtd}</span>}
+          {noCofo && qtd && <span className="block text-base text-babacu/70">{qtd}</span>}
         </span>
       </button>
 
@@ -95,6 +99,30 @@ export function ItemLinha({ item, onCofo, onCasa, onVoltar, onPreco, onRemover }
       >
         <IconeFechar />
       </button>
+      </div>
+      {!noCofo &&
+        (ajustando ? (
+          <div className="flex items-center gap-2 pl-11">
+            <AjusteQuantidade item={item} onMudar={onQuantidade} />
+            <button
+              type="button"
+              onClick={() => setAjustando(false)}
+              aria-label={`Pronto, quantidade de ${item.nome}`}
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-folha"
+            >
+              <IconeCerto />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAjustando(true)}
+            aria-label={`Quantidade de ${item.nome}: ${qtd || 'sem quantidade'}. Toque pra mudar`}
+            className="-mt-2 ml-12 min-h-11 self-start rounded-lg px-1 text-base text-babacu/70 underline decoration-babacu/30 decoration-dotted underline-offset-4"
+          >
+            {qtd || 'quantidade?'}
+          </button>
+        ))}
     </li>
   );
 }

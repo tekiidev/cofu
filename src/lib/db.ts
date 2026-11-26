@@ -1,3 +1,4 @@
+import { ajustar } from './quantidade.ts';
 import Dexie, { type EntityTable } from 'dexie';
 import type { Estado, Item, ItemSugerido } from './items.ts';
 import { planejarJuntar } from './juntar.ts';
@@ -44,6 +45,15 @@ export async function adicionarItens(sugeridos: ItemSugerido[]) {
       if (op.tipo === 'somar') await db.itens.update(op.id, { quantidade: op.quantidade, preco: op.preco });
       else await db.itens.add({ ...op.item, id: novoId(), estado: 'lista', criadoEm: agora + op.ordem });
     }
+  });
+}
+
+export function mudarQuantidade(id: string, direcao: 1 | -1) {
+  return db.transaction('rw', db.itens, async () => {
+    const item = await db.itens.get(id);
+    if (!item || item.estado !== 'lista') return;
+    const ajuste = ajustar(item, direcao);
+    if (ajuste) await db.itens.update(id, ajuste);
   });
 }
 

@@ -17,6 +17,7 @@ import {
   lerModo,
   lerOrcamento,
   mudarEstado,
+  mudarQuantidade,
   novaFeira,
   removerItem,
   salvarModo,
@@ -143,6 +144,7 @@ export default function Inicio() {
     onCasa: (i: Item) => mudarEstado(i.id, 'casa'),
     onVoltar: (i: Item) => mudarEstado(i.id, 'lista'),
     onPreco: (i: Item, preco: number | null) => atualizarItem(i.id, { preco }),
+    onQuantidade: (i: Item, d: 1 | -1) => mudarQuantidade(i.id, d),
     onRemover: (i: Item) => removerItem(i.id),
   };
 
@@ -200,6 +202,7 @@ export default function Inicio() {
             pulso={pulso}
             onCofo={props.onCofo}
             onVoltar={props.onVoltar}
+            onQuantidade={props.onQuantidade}
           />
         </>
       )}
